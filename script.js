@@ -1,19 +1,19 @@
 class LotteryTicket {
     constructor(numbers) {
-        // If numbers are provided, use them; otherwise, initialize an empty array
         this.numbers = numbers || [];
     }
 
     // Method to generate unique lottery numbers using AJAX
     generateUniqueNumbers(callback) {
         const xhr = new XMLHttpRequest();
-        // Use a CORS proxy to bypass CORS issues
         xhr.open('GET', 'https://corsproxy.io/?http://www.randomnumberapi.com/api/v1.0/random?min=1&max=49&count=7', true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                // Parse the JSON response and sort the numbers
+                // Parse the JSON response
                 const numbers = JSON.parse(xhr.responseText);
-                callback(numbers.sort((a, b) => a - b));
+                // Ensure the numbers are unique and sort them
+                const uniqueNumbers = [...new Set(numbers)].sort((a, b) => a - b);
+                callback(uniqueNumbers);
             } else if (xhr.readyState === 4) {
                 console.error('There was a problem with the fetch operation.');
             }
@@ -28,10 +28,13 @@ const tickets = [];
 // Event listener for the "Generate" button
 document.getElementById('generateBtn').addEventListener('click', () => {
     const ticket = new LotteryTicket();
-    // Generate unique numbers and add the new ticket
     ticket.generateUniqueNumbers((numbers) => {
-        ticket.numbers = numbers;
-        addNewTicket(ticket);
+        if (numbers.length === 7) { // Ensure we have 7 unique numbers
+            ticket.numbers = numbers;
+            addNewTicket(ticket);
+        } else {
+            console.error('Failed to generate 7 unique numbers.');
+        }
     });
 });
 
@@ -88,3 +91,5 @@ function addTicketToTable(ticket, index) {
     row.appendChild(deleteButtonCell);
     table.appendChild(row);
 }
+
+module.exports = { LotteryTicket, addNewTicket, updateTicketsTable, deleteTicket, addTicketToTable, tickets };
