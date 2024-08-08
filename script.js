@@ -1,14 +1,20 @@
 class LotteryTicket {
     constructor(numbers) {
-        this.numbers = numbers || this.generateUniqueNumbers();
+        this.numbers = numbers || [];
     }
 
-    generateUniqueNumbers() {
-        const numbers = new Set();
-        while (numbers.size < 7) {
-            numbers.add(Math.floor(Math.random() * 49) + 1);
-        }
-        return Array.from(numbers).sort((a, b) => a - b);
+    generateUniqueNumbers(callback) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'https://corsproxy.io/?http://www.randomnumberapi.com/api/v1.0/random?min=1&max=49&count=7', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const numbers = JSON.parse(xhr.responseText);
+                callback(numbers.sort((a, b) => a - b));
+            } else if (xhr.readyState === 4) {
+                console.error('There was a problem with the fetch operation.');
+            }
+        };
+        xhr.send();
     }
 }
 
@@ -16,7 +22,10 @@ const tickets = [];
 
 document.getElementById('generateBtn').addEventListener('click', () => {
     const ticket = new LotteryTicket();
-    addNewTicket(ticket);
+    ticket.generateUniqueNumbers((numbers) => {
+        ticket.numbers = numbers;
+        addNewTicket(ticket);
+    });
 });
 
 function addNewTicket(ticket) {
