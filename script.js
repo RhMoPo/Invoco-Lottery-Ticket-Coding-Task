@@ -53,7 +53,7 @@ function addTicketToTable(ticket, index) {
     deleteButtonCell.className = 'py-2 text-center';
     const deleteButton = document.createElement('button');
     deleteButton.className = 'bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded';
-    deleteButton.innerText = 'Delete';
+    deleteButton.innerText = 'X';
     deleteButton.addEventListener('click', () => {
         deleteTicket(index);
     });
