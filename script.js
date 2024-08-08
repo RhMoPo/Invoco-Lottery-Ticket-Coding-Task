@@ -3,22 +3,41 @@ class LotteryTicket {
         this.numbers = numbers || [];
     }
 
-    // Method to generate unique lottery numbers using AJAX
-    generateUniqueNumbers(callback) {
+    // Method to generate unique lottery numbers using AJAX with retry and fallback mechanism
+    generateUniqueNumbers(callback, retries = 5) {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', 'https://corsproxy.io/?http://www.randomnumberapi.com/api/v1.0/random?min=1&max=49&count=7', true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                // Parse the JSON response
-                const numbers = JSON.parse(xhr.responseText);
-                // Ensure the numbers are unique and sort them
-                const uniqueNumbers = [...new Set(numbers)].sort((a, b) => a - b);
-                callback(uniqueNumbers);
-            } else if (xhr.readyState === 4) {
-                console.error('There was a problem with the fetch operation.');
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    const numbers = JSON.parse(xhr.responseText);
+                    let uniqueNumbers = [...new Set(numbers)].sort((a, b) => a - b);
+
+                    if (uniqueNumbers.length === 7) {
+                        callback(uniqueNumbers);
+                    } else if (retries > 0) {
+                        console.warn('Retrying due to insufficient unique numbers');
+                        this.generateUniqueNumbers(callback, retries - 1);
+                    } else {
+                        console.warn('Falling back to local generation due to repeated failures');
+                        uniqueNumbers = this.generateFallbackNumbers(uniqueNumbers);
+                        callback(uniqueNumbers);
+                    }
+                } else {
+                    console.error('There was a problem with the fetch operation.');
+                }
             }
         };
         xhr.send();
+    }
+
+    // Fallback mechanism to generate remaining unique numbers locally
+    generateFallbackNumbers(existingNumbers) {
+        const uniqueNumbers = new Set(existingNumbers);
+        while (uniqueNumbers.size < 7) {
+            uniqueNumbers.add(Math.floor(Math.random() * 49) + 1);
+        }
+        return [...uniqueNumbers].sort((a, b) => a - b);
     }
 }
 
@@ -29,12 +48,8 @@ const tickets = [];
 document.getElementById('generateBtn').addEventListener('click', () => {
     const ticket = new LotteryTicket();
     ticket.generateUniqueNumbers((numbers) => {
-        if (numbers.length === 7) { // Ensure we have 7 unique numbers
-            ticket.numbers = numbers;
-            addNewTicket(ticket);
-        } else {
-            console.error('Failed to generate 7 unique numbers.');
-        }
+        ticket.numbers = numbers;
+        addNewTicket(ticket);
     });
 });
 
