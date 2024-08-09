@@ -107,4 +107,4 @@ function addTicketToTable(ticket, index) {
     table.appendChild(row);
 }
 
-// module.exports = { LotteryTicket, addNewTicket, updateTicketsTable, deleteTicket, addTicketToTable, tickets };
+
